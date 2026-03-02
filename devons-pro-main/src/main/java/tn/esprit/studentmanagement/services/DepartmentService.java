@@ -19,8 +19,10 @@ public class DepartmentService implements IDepartmentService {
     }
 
     @Override
-    public Department getDepartmentById(Long idDepartment) {
-        return departmentRepository.findById(idDepartment).get();
+public Department getDepartmentById(Long idDepartment) {
+    return departmentRepository.findById(idDepartment)
+            .orElseThrow(() -> new RuntimeException("Department not found"));
+
     }
 
     @Override
@@ -33,3 +35,4 @@ public class DepartmentService implements IDepartmentService {
 departmentRepository.deleteById(idDepartment);
     }
 }
+
