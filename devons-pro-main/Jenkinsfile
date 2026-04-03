@@ -1,18 +1,75 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_IMAGE = "amine1004/student-management:1.0"
+    }
+
     stages {
-        stage('Git Checkout') {
+
+        stage('GIT') {
             steps {
-                echo 'Récuperation du code ...'
-                git branch : 'master',
-                url : "https://github.com/Linspi/Projet-DevOps.git"
+                git branch: 'main', url: 'https://github.com/amine12882/projetdevops.git'
             }
         }
-        stage('Vérification de maven'){
+
+        stage('MVN CLEAN') {
             steps {
-                echo ('Vérification de maven')
-                sh 'mvn --version'
+                dir('devons-pro-main') {
+                    sh 'mvn clean'
+                }
+            }
+        }
+
+        stage('MVN COMPILE') {
+            steps {
+                dir('devons-pro-main') {
+                    sh 'mvn compile'
+                }
+            }
+        }
+
+        stage('MVN TEST') {
+            steps {
+                dir('devons-pro-main') {
+                    sh 'mvn test'
+                }
+            }
+        }
+
+        stage('MVN PACKAGE') {
+            steps {
+                dir('devons-pro-main') {
+                    sh 'mvn package -DskipTests'
+                }
+            }
+        }
+
+        stage('DOCKER BUILD') {
+            steps {
+                dir('devons-pro-main') {
+                    sh 'docker build -t $DOCKER_IMAGE .'
+                }
+            }
+        }
+
+        stage('DOCKER PUSH') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'USERNAME',
+                    passwordVariable: 'PASSWORD'
+                )]) {
+                    sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin'
+                    sh 'docker push $DOCKER_IMAGE'
+                }
+            }
+        }
+
+        stage('DEPLOY K8S') {
+            steps {
+                sh 'kubectl apply -f k8s-tp/'
+                sh 'kubectl rollout restart deployment/spring-deployment -n devops'
             }
         }
     }
